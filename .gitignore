@@ -1,0 +1,11 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# AI Userdata
+userdata.txt
+
+# Python cache
+__pycache__/
+*.py[cod]
