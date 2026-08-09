@@ -1,6 +1,6 @@
 import requests
 
-SEARXNG_URL = "http://viba-ai01:8888"
+SEARXNG_URL = "http://localhost:5001"
 
 class SearchTool():
     def __init__(self, searxng_url: str = SEARXNG_URL, result_count: int = 5):

@@ -1,17 +1,21 @@
 import json
 import requests
+import time
 
 from tools.time import TimeTool
 from tools.geo import GeoTool
 from tools.user_data import UserDataTool
-from tools.search_tool import SearchTool
+from tools.search import SearchTool
+from tools.rag import RAGTool
+from db import ResultsDB
 
 class AICall:
-    def __init__(self, enabled_tools, preloaded_info, system_prompt: str, reasoning: bool, model: str, query: str):
+    def __init__(self, enabled_tools, preloaded_info, system_prompt: str, reasoning: bool, model: str, query: str, db: ResultsDB = None):
         self.system_prompt = system_prompt
         self.reasoning = reasoning
         self.model = model
         self.query = query
+        self.db = db
 
         self.tools = []
         self.tool_functions = {}
@@ -22,6 +26,9 @@ class AICall:
         self.preloaded_context = {}
         for info in preloaded_info:
             self.preloaded_context.update(info.preload())
+
+        self._tool_names = [t["function"]["name"] for t in self.tools]
+        self._preloaded_info = list(self.preloaded_context.keys())
 
     def request(self, payload):
         res = requests.post(
@@ -36,10 +43,9 @@ class AICall:
         return res.json()
 
     def user_message(self):
-        return  {
-                    "user_info": self.preloaded_context,
-                    "user_msg": self.query
-                }
+            msg = {"user_msg": self.query}
+            msg.update(self.preloaded_context)  # e.g. adds "location": ..., "timestamp": ...
+            return msg
 
     def messages(self, user_message):
         return [
@@ -68,14 +74,29 @@ class AICall:
         messages = self.messages(user_message)
         payload = self.payload(messages)
 
+        run_id = None
+        if self.db:
+            run_id = self.db.start_run(
+                model=self.model,
+                reasoning=self.reasoning,
+                system_prompt=self.system_prompt,
+                query=self.query,
+                preloaded_info=self._preloaded_info,
+                enabled_tools=self._tool_names,
+            )
+
+        start_time = time.time()
+        tool_call_count = 0
+        final_response = None
+
         while True:
             response = self.request(payload)
             message = response["choices"][0]["message"] #response["message"] 
 
-            print(message)
+            #print(message)
 
-            if "tool_calls" not in message:
-                print(message["content"])
+            if "tool_calls" not in message or not message["tool_calls"]:
+                final_response = message.get("content", "")
                 break
 
             messages.append(message)
@@ -83,13 +104,12 @@ class AICall:
             for call in message["tool_calls"]:
                 name = call["function"]["name"]
                 args = json.loads(call["function"]["arguments"])
+                tool_call_count += 1
 
                 if name in self.tool_functions:
                     result = self.tool_functions[name](**args)
                 else:
-                    result = {
-                        "error": f"Unknown tool: {name}"
-                    }
+                    result = {"error": f"Unknown tool: {name}"}
 
                 messages.append({
                     "role": "tool",
@@ -99,37 +119,9 @@ class AICall:
             # Ask model to produce final answer
             payload["messages"] = messages
 
+        duration_ms = int((time.time() - start_time) * 1000)
 
-#ai_call_1 = AICall(
-#    [TimeTool(), GeoTool()],
-#    [], 
-#    "",
-#    False,
-#    "qwen3.5:0.8b",
-#    "Please tell me my approximate location."
-#)
-#
-#ai_call_1.ai_call()
-#
-#
-#ai_call_2 = AICall(
-#    [UserDataTool()],
-#    [],
-#    "",
-#    False,
-#    "qwen3.5:0.8b",
-#    "Please tell me my approximate location."
-#)
-#
-#ai_call_2.ai_call()
-
-ai_call_3 = AICall(
-    [TimeTool(), SearchTool()],
-    [],
-    "",
-    False,
-    "qwen3.5:9b",
-    "Current generation of NVIDIA consumer GPU's. Check the date first. Afterwards search the web. Return 1 GPU name."
-)
-
-ai_call_3.ai_call()
+        if self.db and run_id:
+            self.db.finish_run(run_id, final_response, tool_call_count, duration_ms)
+        
+        return final_response

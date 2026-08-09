@@ -4,10 +4,10 @@ from datetime import datetime
 
 DB_PATH = "./results.db"
 
-class DB:
+class ResultsDB:
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
-        self.__init_db()
+        self._init_db()
 
     def _connect(self):
         return sqlite3.connect(self.db_path)
@@ -15,7 +15,7 @@ class DB:
     def _init_db(self):
         with self._connect() as conn:
             conn.executescript("""
-                CREATE TABLE IF NOT EXISTS calls (
+                CREATE TABLE IF NOT EXISTS runs (
                     id              INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp       TEXT    NOT NULL,
                     enabled_tools   TEXT,               -- JSON list of tool names
@@ -41,10 +41,10 @@ class DB:
     ##########
     # Write
     ##########
-    def call_start(self, enabled_tools, preloaded_info, system_prompt, reasoning, model, query):
+    def start_run(self, enabled_tools, preloaded_info, system_prompt, reasoning, model, query):
         with self._connect() as conn:
             calls = conn.execute(
-                """INSERT INTO calls (timestamp, enabled_tools, preloaded_info, system_prompt, reasoning, model, query)
+                """INSERT INTO runs (timestamp, enabled_tools, preloaded_info, system_prompt, reasoning, model, query)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     datetime.now().isoformat(),
@@ -58,7 +58,7 @@ class DB:
             )
             return calls.lastrowid
 
-    def call_end(self, run_id: int, response: str, tool_call_count: int, duration_ms: int):
+    def finish_run(self, run_id: int, response: str, tool_call_count: int, duration_ms: int):
         with self._connect() as conn:
             conn.execute(
                 """UPDATE runs

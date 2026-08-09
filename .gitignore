@@ -9,3 +9,9 @@ userdata.txt
 # Python cache
 __pycache__/
 *.py[cod]
+
+
+# Database files
+results.db
+chroma_db/
+rag_documents/
