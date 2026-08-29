@@ -31,7 +31,7 @@ class ResultsDB:
 
                 CREATE TABLE IF NOT EXISTS tool_calls (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id      INTEGER NOT NULL REFERENCES calls(id),
+                    run_id      INTEGER NOT NULL REFERENCES runs(id),
                     tool_name   TEXT    NOT NULL,
                     arguments   TEXT,                   -- JSON
                     result      TEXT                    -- JSON
