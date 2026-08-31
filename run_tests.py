@@ -37,6 +37,7 @@ MODELS = [
 ]
 
 SYSTEM_PROMPTS = {
+    "preload_info":   "User messages can be split into multiple parts and be in JSON format. In that case **user_msg** is the actual query, while other entries are just additional context",
     "user_data":      "If you have access to the user_data tools, check the data first before answering and save useful information if you deem it useful when being requested in the future.",
     "priority":       "RAG data has prio over web data, so use the RAG tool before the search tool if available. If neither are available, ignore this instruction.",
     "json_always":    "Antworte ausschließlich im JSON-Format. Kein Fließtext, keine Erklärungen außerhalb des JSON-Objekts.",
