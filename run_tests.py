@@ -57,6 +57,11 @@ _rag    = RAGTool()
 # Tools available for "enabled_tools" (callable by AI)
 ALL_TOOLS = [_time, _geo, _user, _search, _rag]
 
+# "full"    → all 2^5 combinations
+# "single"  → no tools + each individual tool
+# "reduced" → manually selected combinations
+TOOL_COMBO_MODE = "single"
+
 # Tools available for "preloaded_info" (injected directly into user_msg)
 # Only tools that implement preload() meaningfully
 PRELOADABLE = [_time, _geo, _user]
@@ -84,6 +89,28 @@ def powerset(lst):
         for r in range(len(lst) + 1)
         for combo in itertools.combinations(lst, r)
     ]
+
+
+def get_tool_combos():
+    if TOOL_COMBO_MODE == "full":
+        return powerset(ALL_TOOLS)
+
+    if TOOL_COMBO_MODE == "single":
+        return [
+            [],
+            *[[tool] for tool in ALL_TOOLS],
+        ]
+
+    if TOOL_COMBO_MODE == "reduced":
+        return [
+            [],
+            [_time, _rag, _search],
+            [_geo, _rag, _search],
+            [_time, _geo, _search, _rag],
+            [_time, _user]
+        ]
+
+    raise ValueError(f"Unknown TOOL_COMBO_MODE: {TOOL_COMBO_MODE}")
 
 # ------------------------------------------------------------------ #
 # Runner                                                               #
