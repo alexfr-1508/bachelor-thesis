@@ -37,13 +37,8 @@ MODELS = [
 ]
 
 SYSTEM_PROMPTS = {
-    "empty":          "",
-    #"default":        "Du bist ein hilfreicher Assistent. Beantworte Fragen so genau wie möglich.",
-    #"strict":         "Du bist ein präziser Assistent. Antworte ausschließlich auf Basis verifizierter Informationen. Wenn du dir nicht sicher bist, sage das explizit.",
-    "tool_aware":     "Du hast Zugriff auf verschiedene Tools. Nutze diese aktiv um aktuelle oder standortbezogene Informationen zu beschaffen, bevor du antwortest.",
-    #"tool_reluctant": "Beantworte Fragen nur auf Basis deines eigenen Wissens. Nutze externe Tools nur wenn es absolut notwendig ist.",
-    #"german":         "Du bist ein hilfreicher Assistent. Antworte immer auf Deutsch, unabhängig von der Sprache der Frage.",
-    #"concise":        "Antworte immer so kurz und präzise wie möglich. Maximal 3 Sätze.",
+    "user_data":      "If you have access to the user_data tools, check the data first before answering and save useful information if you deem it useful when being requested in the future.",
+    "priority":       "RAG data has prio over web data, so use the RAG tool before the search tool if available. If neither are available, ignore this instruction.",
     "json_always":    "Antworte ausschließlich im JSON-Format. Kein Fließtext, keine Erklärungen außerhalb des JSON-Objekts.",
 }
 
@@ -60,7 +55,7 @@ ALL_TOOLS = [_time, _geo, _user, _search, _rag]
 # "full"    → all 2^5 combinations
 # "single"  → no tools + each individual tool
 # "reduced" → manually selected combinations
-TOOL_COMBO_MODE = "single"
+TOOL_COMBO_MODE = "reduced"
 
 # Tools available for "preloaded_info" (injected directly into user_msg)
 # Only tools that implement preload() meaningfully
