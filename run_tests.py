@@ -59,7 +59,7 @@ ALL_TOOLS = [_time, _geo, _user, _search, _rag]
 
 # Tools available for "preloaded_info" (injected directly into user_msg)
 # Only tools that implement preload() meaningfully
-PRELOADABLE = [_time, _geo]
+PRELOADABLE = [_time, _geo, _user]
 
 # Test queries – each paired with a short label for readability in DB/logs
 QUERIES = [
