@@ -63,14 +63,12 @@ PRELOADABLE = [_time, _geo, _user]
 
 # Test queries – each paired with a short label for readability in DB/logs
 QUERIES = [
-    ("time_query",    "Was ist das aktuelle Datum und die aktuelle Uhrzeit?"),
-    #("geo_query",     "In welcher Stadt befinde ich mich gerade?"),
-    #("search_query",  "Was sind die neuesten Entwicklungen bei lokalen KI-Modellen?"),
-    #("events_query",  "Welche Events finden gerade in meiner Stadt statt?"),
-    #("rag_query",     "Fasse die wichtigsten Inhalte der gespeicherten Dokumente zusammen."),
-    #("profile_query", "Gib mir eine Empfehlung passend zu meinen gespeicherten Präferenzen. Passe sie gegebenenfalls an."),
-    #("json_query",    "Liste drei Programmiersprachen und ihre Hauptanwendungsgebiete. Antworte ausschließlich als valides JSON."),
-    #("no_info_query", "Wie wird das Wetter morgen bei mir?"),
+    ("world_state",   "Who is my current head of state?"), # ambigous on purpose, test to see whether model detects location germany and current date
+    ("search_query",  "What is the current consumer NVIDIA flagship GPU?"),
+    ("events_query",  "Welche Events finden gerade in meiner Stadt statt?"),
+    ("rag_query",     "Fasse die wichtigsten Inhalte der gespeicherten Dokumente zusammen."),
+    ("profile_query", "Gib mir eine Empfehlung passend zu meinen gespeicherten Präferenzen. Passe sie gegebenenfalls an."),
+    ("json_query",    "Liste drei Programmiersprachen und ihre Hauptanwendungsgebiete. Antworte ausschließlich als valides JSON."),
 ]
 
 # ------------------------------------------------------------------ #
