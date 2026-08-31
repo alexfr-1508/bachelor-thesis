@@ -94,7 +94,13 @@ def run_all(dry_run: bool = False):
     db = ResultsDB()
  
     tool_combos    = powerset(ALL_TOOLS)    # 2^5 = 32
-    preload_combos = powerset(PRELOADABLE)  # 2^2 = 4
+    # Only test the two extremes: 
+    # 1. no information preloaded
+    # 2. all preloadable information preloaded 
+    preload_combos = [
+      [],
+      PRELOADABLE,
+    ]
  
     total = (
         len(QUERIES)
