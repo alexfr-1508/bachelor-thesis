@@ -34,7 +34,7 @@ class UserDataTool:
                             },
                             "request": {
                                 "type": "string",
-                                "description": "Reason for requesting location information."
+                                "description": "Reason for saving user data."
                             }
                                                     
                         },
@@ -52,7 +52,7 @@ class UserDataTool:
                         "properties": {
                             "request": {
                                 "type": "string",
-                                "description": "Reason for requesting location information."
+                                "description": "Reason for requesting user data."
                             }
                         },
                         "required": []

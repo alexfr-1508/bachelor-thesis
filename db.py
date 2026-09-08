@@ -16,22 +16,23 @@ class ResultsDB:
         with self._connect() as conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS runs (
-                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp       TEXT    NOT NULL,
-                    enabled_tools   TEXT,               -- JSON list of tool names
-                    preloaded_info  TEXT,               -- JSON list of keys
-                    system_prompt   TEXT,
-                    reasoning       INTEGER NOT NULL,   -- 0 / 1
-                    model           TEXT    NOT NULL,
-                    query    TEXT    NOT NULL,
-                    response        TEXT,
-                    tool_call_count INTEGER DEFAULT 0,
-                    duration_ms     INTEGER
+                    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp         TEXT    NOT NULL,
+                    enabled_tools     TEXT,               -- JSON list of tool names
+                    preloaded_info    TEXT,               -- JSON list of keys
+                    system_prompt     TEXT,
+                    reasoning         INTEGER NOT NULL,   -- 0 / 1
+                    reasoning_content TEXT,            
+                    model             TEXT    NOT NULL,
+                    query    TEXT     NOT NULL,
+                    response          TEXT,
+                    tool_call_count   INTEGER DEFAULT 0,
+                    duration_ms       INTEGER
                 );
 
                 CREATE TABLE IF NOT EXISTS tool_calls (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id      INTEGER NOT NULL REFERENCES calls(id),
+                    run_id      INTEGER NOT NULL REFERENCES runs(id),
                     tool_name   TEXT    NOT NULL,
                     arguments   TEXT,                   -- JSON
                     result      TEXT                    -- JSON
@@ -58,13 +59,13 @@ class ResultsDB:
             )
             return calls.lastrowid
 
-    def finish_run(self, run_id: int, response: str, tool_call_count: int, duration_ms: int):
+    def finish_run(self, run_id: int, response: str, reasoning_content: str, tool_call_count: int, duration_ms: int):
         with self._connect() as conn:
             conn.execute(
                 """UPDATE runs
-                   SET response = ?, tool_call_count = ?, duration_ms = ?
+                   SET response = ?, reasoning_content = ?, tool_call_count = ?, duration_ms = ?
                    WHERE id = ?""",
-                (response, tool_call_count, duration_ms, run_id)
+                (response, reasoning_content, tool_call_count, duration_ms, run_id)
             )
 
     def log_tool_call(self, run_id: int, tool_name: str, arguments: dict, result):

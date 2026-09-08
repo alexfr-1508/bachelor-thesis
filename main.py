@@ -10,12 +10,13 @@ from tools.rag import RAGTool
 from db import ResultsDB
 
 class AICall:
-    def __init__(self, enabled_tools, preloaded_info, system_prompt: str, reasoning: bool, model: str, query: str, db: ResultsDB = None):
+    def __init__(self, enabled_tools, preloaded_info, system_prompt: str, reasoning: bool, model: str, query: str, db: ResultsDB = None, max_tool_calls: int = 30):
         self.system_prompt = system_prompt
         self.reasoning = reasoning
         self.model = model
         self.query = query
         self.db = db
+        self.max_tool_calls = max_tool_calls
 
         self.tools = []
         self.tool_functions = {}
@@ -67,6 +68,7 @@ class AICall:
             "tools": self.tools,
             "tool_choice": "auto",
             "reasoning_effort": "medium" if self.reasoning else "none",
+            "max_completion_tokens": 1024
         }
 
     def ai_call(self):
@@ -88,20 +90,34 @@ class AICall:
         start_time = time.time()
         tool_call_count = 0
         final_response = None
+        reasoning_content = None
+        aborted = False
 
         while True:
             response = self.request(payload)
-            message = response["choices"][0]["message"] #response["message"] 
-
-            #print(message)
+            message = response["choices"][0]["message"]
 
             if "tool_calls" not in message or not message["tool_calls"]:
                 final_response = message.get("content", "")
+                reasoning_content = message.get("reasoning", "")
                 break
 
             messages.append(message)
                 
             for call in message["tool_calls"]:
+                if tool_call_count >= self.max_tool_calls:
+                    print(
+                        f"  [ABORTED] Tool call limit of "
+                        f"{self.max_tool_calls} reached."
+                    )
+                    aborted = True
+                    break
+
+                if aborted:
+                    final_response = "Tool call limit reached. Aborting."
+                    reasoning_content = message.get("reasoning", "")
+                    break
+
                 name = call["function"]["name"]
                 args = json.loads(call["function"]["arguments"])
                 tool_call_count += 1
@@ -121,7 +137,10 @@ class AICall:
 
         duration_ms = int((time.time() - start_time) * 1000)
 
+        print("final response:", final_response)
+        print("reasoning content:", reasoning_content)
+
         if self.db and run_id:
-            self.db.finish_run(run_id, final_response, tool_call_count, duration_ms)
+            self.db.finish_run(run_id, final_response, reasoning_content, tool_call_count, duration_ms)
         
         return final_response

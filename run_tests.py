@@ -29,21 +29,20 @@ from db import ResultsDB
 # ------------------------------------------------------------------ #
 # Add new models here to test them, consider run time
 MODELS = [
-    #"qwen3.5:0.8b",
+    "qwen3.5:0.8b",
+    "qwen3.5:4b",
     "qwen3.5:9b",
-    #"qwen3.5:27b",
-    #"gemma4:e4b",
-    #"gemma4:12b",
+    #"qwen3.5:27b", # hardware requirements too high for local testing
+    #"qwen3.5:35b-a3b", # hardware requirements too high for local testing
+    "gemma4:e4b",
+    "gemma4:12b",
 ]
 
 SYSTEM_PROMPTS = {
-    "empty":          "",
-    #"default":        "Du bist ein hilfreicher Assistent. Beantworte Fragen so genau wie möglich.",
-    #"strict":         "Du bist ein präziser Assistent. Antworte ausschließlich auf Basis verifizierter Informationen. Wenn du dir nicht sicher bist, sage das explizit.",
-    "tool_aware":     "Du hast Zugriff auf verschiedene Tools. Nutze diese aktiv um aktuelle oder standortbezogene Informationen zu beschaffen, bevor du antwortest.",
-    #"tool_reluctant": "Beantworte Fragen nur auf Basis deines eigenen Wissens. Nutze externe Tools nur wenn es absolut notwendig ist.",
-    #"german":         "Du bist ein hilfreicher Assistent. Antworte immer auf Deutsch, unabhängig von der Sprache der Frage.",
-    #"concise":        "Antworte immer so kurz und präzise wie möglich. Maximal 3 Sätze.",
+    "default":       "",
+    "preload_info":   "User messages can be split into multiple parts and be in JSON format. In that case **user_msg** is the actual query, while other entries are just additional context",
+    "user_data":      "If you have access to the user_data tools, check the data first before answering and save useful information if you deem it useful when being requested in the future.",
+    "priority":       "RAG data has prio over web data, so use the RAG tool before the search tool if available. If neither are available, ignore this instruction.",
     "json_always":    "Antworte ausschließlich im JSON-Format. Kein Fließtext, keine Erklärungen außerhalb des JSON-Objekts.",
 }
 
@@ -57,20 +56,23 @@ _rag    = RAGTool()
 # Tools available for "enabled_tools" (callable by AI)
 ALL_TOOLS = [_time, _geo, _user, _search, _rag]
 
+# "full"    → all 2^5 combinations
+# "single"  → no tools + each individual tool
+# "reduced" → manually selected combinations
+TOOL_COMBO_MODE = "reduced"
+
 # Tools available for "preloaded_info" (injected directly into user_msg)
 # Only tools that implement preload() meaningfully
 PRELOADABLE = [_time, _geo]
 
 # Test queries – each paired with a short label for readability in DB/logs
 QUERIES = [
-    ("time_query",    "Was ist das aktuelle Datum und die aktuelle Uhrzeit?"),
-    #("geo_query",     "In welcher Stadt befinde ich mich gerade?"),
-    #("search_query",  "Was sind die neuesten Entwicklungen bei lokalen KI-Modellen?"),
-    #("events_query",  "Welche Events finden gerade in meiner Stadt statt?"),
-    #("rag_query",     "Fasse die wichtigsten Inhalte der gespeicherten Dokumente zusammen."),
-    #("profile_query", "Gib mir eine Empfehlung passend zu meinen gespeicherten Präferenzen. Passe sie gegebenenfalls an."),
-    #("json_query",    "Liste drei Programmiersprachen und ihre Hauptanwendungsgebiete. Antworte ausschließlich als valides JSON."),
-    #("no_info_query", "Wie wird das Wetter morgen bei mir?"),
+    ("world_state",   "Who is my current head of state?"), # ambigous on purpose, test to see whether model detects location germany and current date
+    ("search_query",  "What is the current consumer NVIDIA flagship GPU?"),
+    ("events_query",  "Welche Events finden gerade in meiner Stadt statt?"),
+    ("rag_query",     "Fasse die wichtigsten Inhalte der gespeicherten Dokumente zusammen."),
+    ("profile_query", "Gib mir eine Empfehlung passend zu meinen gespeicherten Präferenzen. Passe sie gegebenenfalls an."),
+    ("json_query",    "Liste drei Programmiersprachen und ihre Hauptanwendungsgebiete. Antworte ausschließlich als valides JSON."),
 ]
 
 # ------------------------------------------------------------------ #
@@ -85,6 +87,31 @@ def powerset(lst):
         for combo in itertools.combinations(lst, r)
     ]
 
+
+def get_tool_combos():
+    if TOOL_COMBO_MODE == "full":
+        return powerset(ALL_TOOLS)
+
+    if TOOL_COMBO_MODE == "single":
+        return [
+            [],
+            *[[tool] for tool in ALL_TOOLS],
+        ]
+
+    if TOOL_COMBO_MODE == "reduced":
+        return [
+            [],
+            [_search],
+            [_rag],
+            [_time, _rag, _search],
+            [_geo, _rag, _search],
+            [_time, _geo, _search, _rag],
+            [_time, _geo, _user],
+            [_rag, _search, _user],
+        ]
+
+    raise ValueError(f"Unknown TOOL_COMBO_MODE: {TOOL_COMBO_MODE}")
+
 # ------------------------------------------------------------------ #
 # Runner                                                               #
 # ------------------------------------------------------------------ #
@@ -93,8 +120,14 @@ def powerset(lst):
 def run_all(dry_run: bool = False):
     db = ResultsDB()
  
-    tool_combos    = powerset(ALL_TOOLS)    # 2^5 = 32
-    preload_combos = powerset(PRELOADABLE)  # 2^2 = 4
+    tool_combos    = get_tool_combos()
+    # Only test the two extremes: 
+    # 1. no information preloaded
+    # 2. all preloadable information preloaded 
+    preload_combos = [
+      [],
+      PRELOADABLE,
+    ]
  
     total = (
         len(QUERIES)
