@@ -39,13 +39,8 @@ MODELS = [
 ]
 
 SYSTEM_PROMPTS = {
-<<<<<<< HEAD
     "default":       "",
     "preload_info":   "User messages can be split into multiple parts and be in JSON format. In that case **user_msg** is the actual query, while other entries are just additional context",
-=======
-    "empty":          "",
-    "preload_info":   "User messages can be split into multiple parts and be in JSON format. In that case **user_msg** is the actual query, while other entries are just additional context.",
->>>>>>> 9ae652ca546a345d12651b1d81dfa2f4feac1889
     "user_data":      "If you have access to the user_data tools, check the data first before answering and save useful information if you deem it useful when being requested in the future.",
     "priority":       "RAG data has prio over web data, so use the RAG tool before the search tool if available. If neither are available, ignore this instruction.",
     "json_always":    "Antworte ausschließlich im JSON-Format. Kein Fließtext, keine Erklärungen außerhalb des JSON-Objekts.",
@@ -106,7 +101,6 @@ def get_tool_combos():
     if TOOL_COMBO_MODE == "reduced":
         return [
             [],
-<<<<<<< HEAD
             [_search],
             [_rag],
             [_time, _rag, _search],
@@ -114,12 +108,6 @@ def get_tool_combos():
             [_time, _geo, _search, _rag],
             [_time, _geo, _user],
             [_rag, _search, _user],
-=======
-            [_time, _rag, _search],
-            [_geo, _rag, _search],
-            [_time, _geo, _search, _rag],
-            [_time, _user]
->>>>>>> 9ae652ca546a345d12651b1d81dfa2f4feac1889
         ]
 
     raise ValueError(f"Unknown TOOL_COMBO_MODE: {TOOL_COMBO_MODE}")
@@ -132,11 +120,7 @@ def get_tool_combos():
 def run_all(dry_run: bool = False):
     db = ResultsDB()
  
-<<<<<<< HEAD
     tool_combos    = get_tool_combos()
-=======
-    tool_combos    = powerset(ALL_TOOLS)    # 2^5 = 32
->>>>>>> 9ae652ca546a345d12651b1d81dfa2f4feac1889
     # Only test the two extremes: 
     # 1. no information preloaded
     # 2. all preloadable information preloaded 

@@ -127,6 +127,8 @@ class AICall:
                 else:
                     result = {"error": f"Unknown tool: {name}"}
 
+                self.db.log_tool_call(run_id, name, args, result)
+
                 messages.append({
                     "role": "tool",
                     "tool_call_id": call["id"],

@@ -13,5 +13,6 @@ __pycache__/
 
 # Database files
 results.db
+results_old.db
 chroma_db/
 rag_documents/
